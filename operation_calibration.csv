@@ -1,0 +1,3 @@
+profile,reconstructed_ms,published_combined_ms,discrepancy_pct,independent_sd_ms,combined_reported_sd_ms
+P1: ML-KEM-512 + ML-DSA-44,2088.819,2076.737,0.5817780489296265,542.2535202255491,689.03
+P2: ML-KEM-768 + ML-DSA-65,3327.5,3498.105,-4.8770691560144686,482.84004436666186,649.988

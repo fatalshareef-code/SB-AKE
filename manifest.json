@@ -1,0 +1,75 @@
+{
+  "source": "Karcz et al., PLOS ONE 21(8) e0355179 (2026), Tables 5 7 8",
+  "source_url": "https://doi.org/10.1371/journal.pone.0355179",
+  "seed": 20260924,
+  "trials": 10000,
+  "platform": "ESP32-C6 workload+BLE+Wi-Fi source primitives, NOT SB-AKE hardware",
+  "model_assumptions": [
+    "independent per-operation draws; empirical cross-operation correlation unknown",
+    "lognormal positive marginals; gamma checked",
+    "per-slice setup 10 +/- 1 ms both constructions; broad and baseline-zero stress checks",
+    "no PUF FE, radio/network, end-to-end energy, peak integrated stack modeled"
+  ],
+  "operation_inputs": {
+    "P1: ML-KEM-512 + ML-DSA-44": {
+      "kem_keygen": [
+        110.973,
+        12.25
+      ],
+      "kem_encap": [
+        114.417,
+        11.596
+      ],
+      "kem_decap": [
+        138.346,
+        12.404
+      ],
+      "dsa_keygen": [
+        424.142,
+        19.79
+      ],
+      "dsa_sign": [
+        893.759,
+        541.178
+      ],
+      "dsa_verify": [
+        407.182,
+        18.309
+      ],
+      "combined": [
+        2076.737,
+        689.03
+      ]
+    },
+    "P2: ML-KEM-768 + ML-DSA-65": {
+      "kem_keygen": [
+        183.672,
+        14.754
+      ],
+      "kem_encap": [
+        183.099,
+        14.119
+      ],
+      "kem_decap": [
+        219.474,
+        15.197
+      ],
+      "dsa_keygen": [
+        768.171,
+        16.285
+      ],
+      "dsa_sign": [
+        1259.74,
+        481.598
+      ],
+      "dsa_verify": [
+        713.344,
+        16.873
+      ],
+      "combined": [
+        3498.105,
+        649.988
+      ]
+    }
+  }
+}

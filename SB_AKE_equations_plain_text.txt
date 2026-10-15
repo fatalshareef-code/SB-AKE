@@ -1,0 +1,44 @@
+Extraction-only transcription of existing native OMML equations. Word file is authoritative; verify notation and layout there.
+
+Equation (1): ctxi,s = IDi ∥ S-NSSAIs ∥ Rolei,s ∥ Policyi,s ∥ eps
+Equation (2): P = (version, networkID, SFID, mode, suite, keyIDs, Nmax)
+Equation (3): Ri ← PUF(Ci);   (Ki, Wi) ← FE.Gen(Ri)
+Equation (4): seedi = HKDF-Expand(Ki, "SB-AKE-id-seed", 32)
+Equation (5): (pki, ski) ← ML-DSA.KeyGen_internal(seedi)
+Equation (6): Di = (IDi, pki, H(Wi), Ci, Fi, vi, P)
+Equation (7): μi = Sign(skRA, "ENROLL" ∥ Di)
+Equation (8): Recordi = (IDi, pki, H(Wi), Ci, Si, statusi, vi)
+Equation (9): Ri' ← PUF(Ci);   Ki ← FE.Rep(Ri', Wi)
+Equation (10): (ekE, dkE) ← ML-KEM.KeyGen()
+Equation (11): (ctN, ssN) ← ML-KEM.Encaps(pkN)
+Equation (12): Kpriv = HKDF-Expand(HKDF-Extract(H(ctN), ssN), ; "conceal" ∥ P ∥ NE ∥ ekE, 32)
+Equation (13): Kreq = HKDF-Expand(Kpriv, "req", 32)
+Equation (14): Reqi = (IDi, Pad({(S-NSSAIs, Rolei,s, epreq,s)}), P)
+Equation (15): σE = Sign(ski, "E" ∥ H(ctN ∥ NE ∥ ekE) ∥ Reqi)
+Equation (16): A1 = "M1" ∥ P ∥ ctN ∥ NE ∥ ekE
+Equation (17): C1 = AEAD.Enc(Kreq, ν0, A1, Pad(Reqi ∥ σE))
+Equation (18): M1 = (ctN, NE, ekE, C1)
+Equation (19): (ct, ss) ← ML-KEM.Encaps(ekE)
+Equation (20): Grant = (Pad({(S-NSSAIs, Rolei,s, Policyi,s, eps)}), P)
+Equation (21): σSF = Sign(skSF, "SF" ∥ H(M1) ∥ NSF ∥ ct ∥ Grant)
+Equation (22): Kresp = HKDF-Expand(Kpriv, "resp" ∥ NSF, 32)
+Equation (23): A2 = "M2" ∥ P ∥ H(M1) ∥ NSF ∥ ct
+Equation (24): C2 = AEAD.Enc(Kresp, ν0, A2, Pad(Grant ∥ σSF))
+Equation (25): M2 = (NSF, ct, C2)
+Equation (26): ss ← ML-KEM.Decaps(dkE, ct)
+Equation (27): T = H("SB-AKE-v2" ∥ P ∥ M1 ∥ M2 ∥ H(Grant) ; ∥ H(pki) ∥ H(pkSF))
+Equation (28): Kroot = HKDF-Extract(T, ss)
+Equation (29): Kconf = HKDF-Expand(Kroot, "conf" ∥ T, 32)
+Equation (30): Kslice(i,s) = HKDF-Expand(Kroot, "slice" ∥ P ∥ ctxi,s, 32)
+Equation (31): Kupd(i,s) = HKDF-Expand(Kroot, "update" ∥ P ; ∥ IDi ∥ S-NSSAIs ∥ Rolei,s, 32)
+Equation (32): Kack(i,s) = HKDF-Expand(Kupd(i,s), "ack" ∥ T, 32)
+Equation (33): KCE = HMAC(Kconf, "KC-E" ∥ T);   M3 = (T, KCE)
+Equation (34): KCSF = HMAC(Kconf, "KC-SF" ∥ T ∥ KCE)
+Equation (35): M4 = (T, KCSF)
+Equation (36): Bs = "UPD" ∥ P ∥ T ∥ IDi ∥ S-NSSAIs ∥ Rolei,s
+Equation (37): Ps = (epold, epnew, Policynew);   epnew > epold
+Equation (38): Us = (T, S-NSSAIs, q, AEAD.Enc(Kupd(i,s), ; Encode96(q), Bs ∥ q, Ps))
+Equation (39): ctxi,s' = IDi ∥ S-NSSAIs ∥ Rolei,s ∥ Policynew ∥ epnew
+Equation (40): Kslice(i,s)' = HKDF-Expand(Kroot, "slice" ∥ P ∥ ctxi,s', 32)
+Equation (41): as = HMAC(Kack(i,s), "ACK" ∥ T ∥ H(Us))
+Equation (42): ACKs = (T, S-NSSAIs, q, as)

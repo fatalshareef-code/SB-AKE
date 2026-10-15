@@ -1,0 +1,41 @@
+REVISION MAPPING (SB-AKE manuscript, 24 September 2026)
+
+1. Evidence gap / venue: Abstract, Introduction, Secs. 5.5 and 7.5 explicitly
+   distinguish the archived simplified baseline ProVerif results from the
+   unverified full novel construction. Sec. 7.5 names final full-ProVerif
+   negative tests and physical-PUF feasibility as prospective gatekeepers at
+   venues requiring complete security/embedded validation. No fabricated
+   formal or physical results have been added.
+
+2. Published P2 discrepancy: Sec. 6.1 compares operation-sum and independently
+   published combination measurements, says exact cause cannot be inferred
+   without original joint timing traces, and does not mislabel as rounding.
+   Sec. 6.2 justifies moment-matched positive lognormal while explicitly
+   acknowledging high-signature variance; Sec. 6.5 executes gamma robustness.
+   Secs. 6.2/6.4 distinguish equal modeled per-slice setup charges from real
+   baseline architecture and provide baseline-zero setup stress analysis;
+   sweep widened analytically to 1000 ms.
+
+3. Reproducibility: Full runnable Python, frozen seed, source measurements,
+   two-profile raw/summary results, gamma/sensitivity datasets, figures,
+   manifest and checksums included. Earlier ProVerif artifact archived but
+   full-protocol model and new execution are NOT claimed.
+
+4. Related work: Targeted adjacent post-quantum 5G core and 5G slice key
+   management references added; novelty text narrowed to testable property
+   interactions, not universal absence of prior art.
+
+5. Bibliography: [29] Turnip issue/online years differentiated, [33] Shahid
+   publication/DOI-year clarified, IETF [32] draft version/date updated.
+
+6. Presentation: Table 7 pointed to from Introduction; 42 native displayed
+   OMML equations retained; mixed math/prose expressions normalized for
+   accessible extraction, with separate plain-text equation transcript;
+   document fully rendered and inspected.
+
+OUTSTANDING: Execute full SB-AKE ProVerif model including separate KEM paths,
+ML-DSA signature checks, hierarchy/sibling reveal, update/replay tests and
+negative adversarial experiments. Physically validate SRAM-PUF boot sampling,
+helper data/entropy and integrated ESP32-C6 if submitting to a venue where
+those are prerequisites. Assign permanent supplemental artifact DOI before
+claiming public repository availability.

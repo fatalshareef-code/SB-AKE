@@ -1,0 +1,130 @@
+(* SB-PAKE ProVerif symbolic model
+   Protocol: Slice-Bound PUF-Assisted ML-KEM Authenticated Key Establishment
+   Purpose: symbolic DY verification of session-key secrecy, mutual authentication,
+            replay resistance through injective agreement, and slice-context binding.
+
+   IMPORTANT MODELING NOTES:
+   - ML-KEM is abstracted as an IND-CCA-secure KEM constructor/destructor.
+   - The SRAM-PUF + fuzzy extractor is abstracted as a private reconstructed endpoint key Ki.
+   - Public helper data Wi and challenge Ci are exposed to the adversary.
+   - This model verifies the message-flow logic, not PUF entropy or ML-KEM computational hardness.
+*)
+
+free c: channel.
+
+(* Public context constants. *)
+free IDi: bitstring.
+free SNSSAI: bitstring.
+free Rolei: bitstring.
+free Policyi: bitstring.
+free Ep: bitstring.
+free Wi: bitstring.
+free Ci: bitstring.
+
+(* Private PUF/fuzzy-extractor output and test plaintext. *)
+free Ki: bitstring [private].
+free testsecret: bitstring [private].
+
+(* Hash, MAC, KDF, symmetric encryption, and ML-KEM abstraction. *)
+fun h(bitstring): bitstring.
+fun mac(bitstring, bitstring): bitstring.
+reduc forall k: bitstring, m: bitstring; checkmac(mac(k,m), k, m) = true.
+
+fun hkdf(bitstring, bitstring, bitstring): bitstring.
+
+fun senc(bitstring, bitstring): bitstring.
+reduc forall m: bitstring, k: bitstring; sdec(senc(m,k), k) = m.
+
+fun pk(bitstring): bitstring.
+fun kemenc(bitstring, bitstring): bitstring.
+reduc forall sk: bitstring, ss: bitstring; kemdec(sk, kemenc(pk(sk), ss)) = ss.
+
+(* Encoding functions used to represent concatenated protocol fields. *)
+fun ctx(bitstring, bitstring, bitstring, bitstring, bitstring): bitstring.
+fun m1body(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring): bitstring.
+fun m2body(bitstring, bitstring, bitstring, bitstring, bitstring): bitstring.
+fun info(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring): bitstring.
+fun kcEbody(bitstring, bitstring): bitstring.
+fun kcSFbody(bitstring, bitstring, bitstring): bitstring.
+
+(* Authentication events. *)
+event beginE(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring).
+event endE(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring).
+event beginSF(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring).
+event endSF(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring).
+
+let Endpoint =
+    (* Local PUF reconstruction is abstracted as access to private Ki.
+       The public helper data Wi and challenge Ci are exposed in the main process. *)
+    new NE: bitstring;
+    new dkE: bitstring;
+    let ekE = pk(dkE) in
+    let epReq = Ep in
+    let b1 = m1body(IDi, SNSSAI, Rolei, epReq, NE, h(ekE)) in
+    let tagE = mac(Ki, b1) in
+    out(c, (IDi, SNSSAI, Rolei, epReq, NE, ekE, tagE));
+
+    in(c, (polR: bitstring, epR: bitstring, NSF: bitstring, ctR: bitstring, tagSFR: bitstring));
+    let b2 = m2body(h(b1), polR, epR, NSF, h(ctR)) in
+    if checkmac(tagSFR, Ki, b2) = true then
+        let ssE = kemdec(dkE, ctR) in
+        let cxi = ctx(IDi, SNSSAI, Rolei, polR, epR) in
+        let kSess = hkdf(ssE, h(Ki), info(cxi, NE, NSF, h(ekE), h(ctR), h(b1), h(b2))) in
+        event beginE(IDi, SNSSAI, Rolei, polR, epR, NE, NSF, kSess);
+        let kcE = mac(kSess, kcEbody(h(b1), h(b2))) in
+        out(c, kcE);
+
+        in(c, kcSFR: bitstring);
+        if checkmac(kcSFR, kSess, kcSFbody(h(b1), h(b2), h(kcE))) = true then
+            event endE(IDi, SNSSAI, Rolei, polR, epR, NE, NSF, kSess);
+            (* This tests confidentiality of application data protected by the accepted session key. *)
+            out(c, senc(testsecret, kSess)).
+
+let SliceServingFunction =
+    in(c, (idR: bitstring, snR: bitstring, roleR: bitstring, epReqR: bitstring,
+           NER: bitstring, ekER: bitstring, tagER: bitstring));
+    let b1 = m1body(idR, snR, roleR, epReqR, NER, h(ekER)) in
+    if checkmac(tagER, Ki, b1) = true then
+    if idR = IDi then
+    if snR = SNSSAI then
+    if roleR = Rolei then
+    if epReqR = Ep then
+        new NSF: bitstring;
+        new ssSF: bitstring;
+        let pol = Policyi in
+        let ep = Ep in
+        let ct = kemenc(ekER, ssSF) in
+        let b2 = m2body(h(b1), pol, ep, NSF, h(ct)) in
+        let tagSF = mac(Ki, b2) in
+        out(c, (pol, ep, NSF, ct, tagSF));
+        let cxi = ctx(idR, snR, roleR, pol, ep) in
+        let kSess = hkdf(ssSF, h(Ki), info(cxi, NER, NSF, h(ekER), h(ct), h(b1), h(b2))) in
+        event beginSF(idR, snR, roleR, pol, ep, NER, NSF, kSess);
+
+        in(c, kcER: bitstring);
+        if checkmac(kcER, kSess, kcEbody(h(b1), h(b2))) = true then
+            event endSF(idR, snR, roleR, pol, ep, NER, NSF, kSess);
+            let kcSF = mac(kSess, kcSFbody(h(b1), h(b2), h(kcER))) in
+            out(c, kcSF).
+
+(* Queries.
+   Q1: The adversary should not learn testsecret encrypted under an accepted session key.
+   Q2-Q3: Mutual injective agreement on the full slice-bound tuple and the session key.
+   Because nonces and ep are included, replayed runs should not satisfy injective agreement. *)
+query attacker(testsecret).
+
+query id: bitstring, sn: bitstring, role: bitstring, pol: bitstring, ep: bitstring,
+      ne: bitstring, nsf: bitstring, k: bitstring;
+      inj-event(endSF(id, sn, role, pol, ep, ne, nsf, k)) ==>
+      inj-event(beginE(id, sn, role, pol, ep, ne, nsf, k)).
+
+query id: bitstring, sn: bitstring, role: bitstring, pol: bitstring, ep: bitstring,
+      ne: bitstring, nsf: bitstring, k: bitstring;
+      inj-event(endE(id, sn, role, pol, ep, ne, nsf, k)) ==>
+      inj-event(beginSF(id, sn, role, pol, ep, ne, nsf, k)).
+
+process
+    (* Public helper data and enrolled challenge are intentionally available to the attacker. *)
+    out(c, Wi);
+    out(c, Ci);
+    (!Endpoint | !SliceServingFunction)
